@@ -1,0 +1,77 @@
+<!-- c:/Users/Dani B/Desktop/BienestarAnimal/frontend/graphs.html -->
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inteligencia de Datos - Quantum</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <span style="color: var(--primary);">Q</span>uantum
+            </div>
+            <ul class="nav-links">
+                <li><a href="dashboard.html"><span>🏠</span> Dashboard</a></li>
+                <li><a href="animal.html"><span>🐾</span> Fauna</a></li>
+                <li><a href="evaluation.html"><span>📋</span> Auditoría</a></li>
+                <li><a href="graphs.html" class="active"><span>📈</span> Inteligencia</a></li>
+                <li style="margin-top: auto;"><a href="#" id="logoutBtn" style="color: var(--danger);"><span>🔒</span>
+                        Salir</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div>
+                    <h1>Análisis Profundo</h1>
+                    <p style="color: var(--text-muted);">Modelado de tendencias y biometría de bienestar</p>
+                </div>
+            </header>
+
+            <div class="glass-panel"
+                style="padding: 1.5rem; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1.5rem;">
+                <span class="stat-label">Sujeto de Análisis:</span>
+                <select id="graphAnimalSelect" class="form-control"
+                    style="max-width: 320px; border: none; background: transparent;">
+                    <option value="">-- Seleccionar Sujeto --</option>
+                </select>
+            </div>
+
+            <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));">
+                <div class="glass-panel"
+                    style="padding: 2.5rem; min-height: 450px; display: flex; flex-direction: column;">
+                    <h3
+                        style="margin-bottom: 2rem; font-size: 0.9rem; color: var(--primary); text-transform: uppercase; letter-spacing: 2px;">
+                        Evolución de Bienestar</h3>
+                    <div style="flex: 1; position: relative;">
+                        <canvas id="historyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-panel"
+                    style="padding: 2.5rem; min-height: 450px; display: flex; flex-direction: column;">
+                    <h3
+                        style="margin-bottom: 2rem; font-size: 0.9rem; color: var(--primary); text-transform: uppercase; letter-spacing: 2px;">
+                        Balance por Dominio</h3>
+                    <div style="flex: 1; position: relative;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/charts.js"></script>
+</body>
+
+</html>

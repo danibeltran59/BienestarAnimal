@@ -1,0 +1,229 @@
+<!-- c:/Users/Dani B/Desktop/BienestarAnimal/frontend/dashboard.html -->
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Welfare - Intel</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        .glow-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 15px var(--accent-glow);
+            margin-right: 8px;
+        }
+
+        .activity-row {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition);
+        }
+
+        .activity-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <span style="color: var(--primary);">Q</span>uantum
+            </div>
+            <ul class="nav-links">
+                <li><a href="dashboard.html" class="active"><span>📊</span> Dashboard</a></li>
+                <li><a href="animal.html"><span>🐾</span> Fauna</a></li>
+                <li><a href="evaluation.html"><span>📋</span> Auditoría</a></li>
+                <li><a href="graphs.html"><span>📈</span> Inteligencia</a></li>
+                <li style="margin-top: auto;"><a href="#" id="logoutBtn" style="color: var(--danger);"><span>🔒</span>
+                        Desconexión</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <div>
+                    <h1>Inteligencia de Bienestar</h1>
+                    <p style="color: var(--text-muted);">Sincronización en tiempo real con el Zoo</p>
+                </div>
+                <div class="glass-panel"
+                    style="padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 1rem;">
+                    <div class="glow-dot"></div>
+                    <span style="font-weight: 600; font-size: 0.9rem;">SISTEMA ONLINE</span>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <div class="glass-panel stat-card">
+                    <div class="stat-value" id="totalAnimals">--</div>
+                    <div class="stat-label">Stock de Fauna</div>
+                </div>
+                <div class="glass-panel stat-card">
+                    <div class="stat-value" id="totalEvaluations">--</div>
+                    <div class="stat-label">Registros Históricos</div>
+                </div>
+                <div class="glass-panel stat-card">
+                    <div class="stat-value" id="avgWelfare">--%</div>
+                    <div class="stat-label">Welfare Index (GBL)</div>
+                </div>
+            </div>
+
+            <!-- Dashboard Modules -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 2rem;">
+                <!-- ALERTS SECTION -->
+                <section class="glass-panel" style="padding: 2rem; border-top: 4px solid var(--danger);">
+                    <h2
+                        style="font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--danger); display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.3rem;">⚠️</span> ALERTAS CRÍTICAS
+                    </h2>
+                    <div id="criticalAlerts" style="max-height: 350px; overflow-y: auto;">
+                        <!-- Alerts injected here -->
+                    </div>
+                </section>
+
+                <!-- RECENT ACTIVITY -->
+                <section class="glass-panel" style="padding: 2rem;">
+                    <h2 style="font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--text-main);">LOG OPERATIVO</h2>
+                    <div id="activityLog" style="max-height: 350px; overflow-y: auto;">
+                        <p style="color: var(--text-muted); text-align: center;">Accediendo a la base de datos...</p>
+                    </div>
+                </section>
+
+                <!-- GENERAL STATUS -->
+                <section class="glass-panel"
+                    style="padding: 2rem; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <h2 style="font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--text-main);">ESTADO MENTAL GBL
+                    </h2>
+                    <div
+                        style="width: 10vw; height: 10vw; min-width: 120px; min-height: 120px; border-radius: 50%; border: 6px solid var(--base-dark); box-shadow: 0 0 30px var(--primary-glow); display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                        <span id="mentalIndex"
+                            style="font-size: 2rem; font-weight: 800; color: var(--primary);">--%</span>
+                    </div>
+                    <p id="mentalStatusLabel"
+                        style="color: var(--accent); font-weight: 700; letter-spacing: 1px; font-size: 0.8rem;">
+                        PROCESANDO...</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        if (!localStorage.getItem('jwt_token')) window.location.href = 'index.html';
+
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('jwt_token');
+            window.location.href = 'index.html';
+        });
+
+        async function loadDashboard() {
+            try {
+                const [animals, evaluations] = await Promise.all([
+                    Api.getAnimals(),
+                    Api.getAllEvaluations()
+                ]);
+
+                document.getElementById('totalAnimals').textContent = animals.length;
+                document.getElementById('totalEvaluations').textContent = evaluations.length;
+
+                // 1. Calculate Average & Overall Status
+                if (evaluations.length > 0) {
+                    const avg = Math.round(evaluations.reduce((s, e) => s + (e.puntuacionGlobal || 0), 0) / evaluations.length);
+                    document.getElementById('avgWelfare').textContent = `${avg}%`;
+                    document.getElementById('mentalIndex').textContent = `${avg}%`;
+
+                    const label = document.getElementById('mentalStatusLabel');
+                    if (avg < 60) {
+                        label.textContent = "ESTADO: CRÍTICO";
+                        label.style.color = "var(--danger)";
+                    } else if (avg < 85) {
+                        label.textContent = "ESTADO: ESTABLE";
+                        label.style.color = "var(--warning)";
+                    } else {
+                        label.textContent = "ESTADO: ÓPTIMO";
+                        label.style.color = "var(--accent)";
+                    }
+                }
+
+                // 2. Logic for Critical Alerts (Last evaluation per animal)
+                const alertsContainer = document.getElementById('criticalAlerts');
+                alertsContainer.innerHTML = '';
+
+                const lastEvalsByAnimal = {};
+                evaluations.forEach(ev => {
+                    const id = ev.animal?.id;
+                    if (!id) return; // Skip orphans
+                    if (!lastEvalsByAnimal[id] || new Date(ev.fechaHora) > new Date(lastEvalsByAnimal[id].fechaHora)) {
+                        lastEvalsByAnimal[id] = ev;
+                    }
+                });
+
+                const atRisk = Object.values(lastEvalsByAnimal)
+                    .filter(ev => ev.puntuacionGlobal < 75)
+                    .sort((a, b) => a.puntuacionGlobal - b.puntuacionGlobal);
+
+                if (atRisk.length === 0) {
+                    alertsContainer.innerHTML = '<p style="color: var(--accent); padding: 1rem; text-align: center; font-size: 0.8rem;">✅ Todos los sujetos están en parámetros de seguridad.</p>';
+                } else {
+                    atRisk.forEach(ev => {
+                        const alertRow = document.createElement('div');
+                        alertRow.className = 'activity-row';
+                        alertRow.style.background = ev.puntuacionGlobal < 60 ? 'rgba(239, 68, 68, 0.1)' : 'transparent';
+                        alertRow.innerHTML = `
+                            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                                <div style="font-size: 1.2rem;">${ev.puntuacionGlobal < 60 ? '🔴' : '🟡'}</div>
+                                <div>
+                                    <div style="font-weight: 700; color: ${ev.puntuacionGlobal < 60 ? 'var(--danger)' : 'var(--warning)'}">${ev.animal?.nombre || 'S/N'}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted)">Nivel: ${ev.puntuacionGlobal}%</div>
+                                </div>
+                            </div>
+                            <a href="evaluation.html?animalId=${ev.animal?.id}" class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">REVISAR</a>
+                        `;
+                        alertsContainer.appendChild(alertRow);
+                    });
+                }
+
+                // 3. Recent Activity Log
+                const log = document.getElementById('activityLog');
+                log.innerHTML = '';
+                const recent = evaluations.sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora)).slice(0, 10);
+
+                recent.forEach(ev => {
+                    const row = document.createElement('div');
+                    row.className = 'activity-row';
+                    row.innerHTML = `
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <div style="width: 6px; height: 6px; border-radius: 50%; background: ${ev.puntuacionGlobal > 80 ? 'var(--accent)' : (ev.puntuacionGlobal > 60 ? 'var(--warning)' : 'var(--danger)')}"></div>
+                            <div style="font-size: 0.85rem;">
+                                <span style="font-weight: 600;">${ev.animal?.nombre || 'S/N'}</span>
+                                <span style="color: var(--text-muted); font-size: 0.75rem;"> - ${ev.evaluador || 'Anon'}</span>
+                            </div>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.85rem; color: var(--primary);">${ev.puntuacionGlobal}%</div>
+                    `;
+                    log.appendChild(row);
+                });
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('activityLog').innerHTML = '<p style="color: var(--danger);">Error de sincronización operativa.</p>';
+            }
+        }
+        loadDashboard();
+    </script>
+</body>
+
+</html>

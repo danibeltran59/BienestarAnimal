@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/usuarios/**").permitAll() // Login & Register
                         .requestMatchers("/api/files/download/**").permitAll() // Public images
-                        .requestMatchers("/", "/index.html", "/styles/**", "/js/**", "/manifest.json", "/sw.js",
+                        .requestMatchers("/", "/index.html", "/assets/**", "/static/**", "/manifest.json", "/sw.js",
                                 "/*.html")
                         .permitAll() // Static resources
                         .anyRequest().authenticated())

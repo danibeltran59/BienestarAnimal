@@ -1,0 +1,124 @@
+<!-- c:/Users/Dani B/Desktop/BienestarAnimal/frontend/index.html -->
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienestar Animal - Acceso</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        .login-container {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=1920');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .login-card {
+            padding: 3rem;
+            width: 90%;
+            max-width: 450px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW registrado', reg))
+                    .catch(err => console.log('SW error', err));
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div class="login-container">
+        <!-- Login Card -->
+        <div class="glass-panel login-card" id="loginCard">
+            <h1 style="text-align: center; margin-bottom: 0.5rem; color: var(--primary);">Bienestar</h1>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 2.5rem;">Gestión Profesional de Fauna
+            </p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Correo Institucional</label>
+                    <input type="email" id="email" class="form-control" required placeholder="tu@correo.com">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" id="password" class="form-control" required placeholder="••••••••">
+                </div>
+
+                <div id="errorMessage" class="text-danger hidden"
+                    style="margin-bottom: 1rem; text-align: center; font-size: 0.85rem;">Credenciales incorrectas</div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Acceder al Portal</button>
+            </form>
+
+            <p style="margin-top: 2rem; text-align: center; font-size: 0.9rem;">
+                ¿Solicitar acceso? <a href="#" id="showRegister"
+                    style="color: var(--primary); font-weight: 600; text-decoration: none;">Crear cuenta nueva</a>
+            </p>
+        </div>
+
+        <!-- Registration Card -->
+        <div class="glass-panel login-card hidden" id="registerCard">
+            <h1 style="text-align: center; margin-bottom: 0.5rem; color: var(--primary);">Registro</h1>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 2.5rem;">Únete al equipo de
+                cuidadores</p>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label class="form-label">Nombre Completo</label>
+                    <input type="text" id="regNombre" class="form-control" required placeholder="Ej: Juan Pérez">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="regEmail" class="form-control" required placeholder="tu@correo.com">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Establecer Contraseña</label>
+                    <input type="password" id="regPassword" class="form-control" required
+                        placeholder="Mínimo 8 caracteres">
+                </div>
+
+                <div id="regErrorMessage" class="text-danger hidden"
+                    style="margin-bottom: 1rem; text-align: center; font-size: 0.85rem;">Error en el registro</div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Finalizar Registro</button>
+            </form>
+
+            <p style="margin-top: 2rem; text-align: center; font-size: 0.9rem;">
+                ¿Ya tienes cuenta? <a href="#" id="showLogin"
+                    style="color: var(--primary); font-weight: 600; text-decoration: none;">Inicia sesión aquí</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+
+</html>

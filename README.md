@@ -65,5 +65,5 @@ Si deseas realizar cambios en el frontend y volver a integrarlos:
 ## 7. Propósito Académico
 Este proyecto ha sido desarrollado como trabajo final para la asignatura de **Desarrollo de Aplicaciones Web**. Su propósito es demostrar la integración profesional de un stack Full Stack moderno y la digitalización de protocolos técnicos de bienestar animal.
 
-**Autor:** [Tu Nombre / Dani B]
+**Autor:** [Daniel Beltrán Ruiz]
 **Fecha:** Enero 2026

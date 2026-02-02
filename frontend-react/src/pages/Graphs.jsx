@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Api } from '../services/api';
 import Layout from '../components/Layout';
+import UserDropdown from '../components/UserDropdown';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -155,16 +156,19 @@ const Graphs = () => {
                     <h1>Inteligencia de Datos</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Análisis predictivo y seguimiento histórico</p>
                 </div>
-                <div className="glass-panel" style={{ padding: '0.5rem 1rem' }}>
-                    <select
-                        className="form-control"
-                        style={{ border: 'none', background: 'transparent' }}
-                        value={selectedAnimalId}
-                        onChange={handleAnimalChange}
-                    >
-                        <option value="">Seleccionar Sujeto...</option>
-                        {animals.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-                    </select>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div className="glass-panel" style={{ padding: '0.5rem 1rem' }}>
+                        <select
+                            className="form-control"
+                            style={{ border: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '1rem', cursor: 'pointer' }}
+                            value={selectedAnimalId}
+                            onChange={handleAnimalChange}
+                        >
+                            <option value="" style={{ color: '#000' }}>Seleccionar Sujeto...</option>
+                            {animals.map(a => <option key={a.id} value={a.id} style={{ color: '#000' }}>{a.nombre}</option>)}
+                        </select>
+                    </div>
+                    <UserDropdown />
                 </div>
             </header>
 

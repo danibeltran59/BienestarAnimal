@@ -41,27 +41,34 @@
             <div class="sidebar-header">
                 <span style="color: var(--primary);">Q</span>uantum
             </div>
-            <ul class="nav-links">
+            <ul class="nav-links" style="height: 100%;">
                 <li><a href="dashboard.html" class="active"><span>📊</span> Dashboard</a></li>
                 <li><a href="animal.html"><span>🐾</span> Fauna</a></li>
                 <li><a href="evaluation.html"><span>📋</span> Auditoría</a></li>
                 <li><a href="graphs.html"><span>📈</span> Inteligencia</a></li>
-                <li style="margin-top: auto;"><a href="#" id="logoutBtn" style="color: var(--danger);"><span>🔒</span>
-                        Desconexión</a></li>
+
+                <li class="user-profile-section">
+                    <div class="user-badge" id="userBadge">
+                        <div class="user-avatar-mini" id="userInitial">U</div>
+                        <div class="user-info-mini">
+                            <div class="user-email-mini" id="userEmail">Cargando...</div>
+                            <div class="user-role-mini" id="userRole">--</div>
+                        </div>
+                    </div>
+                    <a href="#" id="logoutBtn" style="color: var(--danger); padding: 0.5rem 0.75rem;">
+                        <span>🔒</span> Desconexión
+                    </a>
+                </li>
             </ul>
         </nav>
 
         <!-- Main Content -->
         <main class="main-content">
-            <header class="content-header">
+            <header class="content-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; padding: 1rem 0;">
                 <div>
                     <h1>Inteligencia de Bienestar</h1>
                     <p style="color: var(--text-muted);">Sincronización en tiempo real con el Zoo</p>
-                </div>
-                <div class="glass-panel"
-                    style="padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 1rem;">
-                    <div class="glow-dot"></div>
-                    <span style="font-weight: 600; font-size: 0.9rem;">SISTEMA ONLINE</span>
                 </div>
             </header>
 
@@ -121,15 +128,27 @@
 
     <script src="js/api.js"></script>
     <script>
-        if (!localStorage.getItem('jwt_token')) window.location.href = 'index.html';
+        if (!sessionStorage.getItem('jwt_token')) window.location.href = 'index.html';
 
         document.getElementById('logoutBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            localStorage.removeItem('jwt_token');
+            sessionStorage.removeItem('jwt_token');
             window.location.href = 'index.html';
         });
 
+        async function loadUserInfo() {
+            try {
+                const user = await Api.getCurrentUser();
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('userRole').textContent = user.role;
+                document.getElementById('userInitial').textContent = user.email.charAt(0).toUpperCase();
+            } catch (err) {
+                console.error("Error loading user info:", err);
+            }
+        }
+
         async function loadDashboard() {
+            loadUserInfo();
             try {
                 const [animals, evaluations] = await Promise.all([
                     Api.getAnimals(),

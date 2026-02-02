@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Api } from '../services/api';
 import Layout from '../components/Layout';
+import UserDropdown from '../components/UserDropdown';
 import { AlertTriangle, Activity, Brain } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -61,7 +62,7 @@ const Dashboard = () => {
                 });
 
                 const atRisk = Object.values(lastEvalsByAnimal)
-                    .filter(ev => ev.puntuacionGlobal < 75)
+                    .filter(ev => ev.puntuacionGlobal < 60)
                     .sort((a, b) => a.puntuacionGlobal - b.puntuacionGlobal);
 
                 setCriticalAlerts(atRisk);
@@ -87,16 +88,7 @@ const Dashboard = () => {
                     <h1>Inteligencia de Bienestar</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Sincronización en tiempo real con el Zoo</p>
                 </div>
-                <div className="glass-panel" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{
-                        width: '12px',
-                        height: '12px',
-                        background: 'var(--accent)',
-                        borderRadius: '50%',
-                        boxShadow: '0 0 15px var(--accent-glow)'
-                    }}></div>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>SISTEMA ONLINE</span>
-                </div>
+                <UserDropdown />
             </header>
 
             <div className="dashboard-grid">
@@ -146,8 +138,8 @@ const Dashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <Link to={`/animals?id=${ev.animal.id}`} className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem' }}>
-                                        REVISAR
+                                    <Link to={`/auditoria?id=${ev.id}`} className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem' }}>
+                                        DETALLES
                                     </Link>
                                 </div>
                             ))
@@ -162,12 +154,14 @@ const Dashboard = () => {
                     </h2>
                     <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
                         {recentActivity.map(ev => (
-                            <div key={ev.id} className="activity-row" style={{
+                            <Link key={ev.id} to={`/auditoria?id=${ev.id}`} className="activity-row" style={{
                                 padding: '1.25rem',
                                 borderBottom: '1px solid var(--glass-border)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'space-between'
+                                justifyContent: 'space-between',
+                                textDecoration: 'none',
+                                color: 'inherit'
                             }}>
                                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                                     <div style={{
@@ -184,7 +178,7 @@ const Dashboard = () => {
                                 <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>
                                     {ev.puntuacionGlobal}%
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 </section>

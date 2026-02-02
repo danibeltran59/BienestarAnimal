@@ -27,4 +27,9 @@ public class AuthController {
         String password = request.get("password");
         return ResponseEntity.ok(usuarioService.login(email, password));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<Map<String, String>> getCurrentUser() {
+        return ResponseEntity.ok(usuarioService.getCurrentUser());
+    }
 }

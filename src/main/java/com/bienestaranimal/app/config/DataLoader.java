@@ -40,6 +40,13 @@ public class DataLoader implements CommandLineRunner {
         @Override
         @Transactional
         public void run(String... args) throws Exception {
+                // 0. Limpieza de tablas obsoletas (Fix para error FK en eliminación)
+                try {
+                        entityManager.createNativeQuery("DROP TABLE IF EXISTS evaluacion_respuestas").executeUpdate();
+                } catch (Exception e) {
+                        System.out.println("DataLoader: Tabla evaluacion_respuestas no existe o ya fue eliminada.");
+                }
+
                 // 1. Asegurar Preguntas (Siempre necesario)
                 if (preguntaRepository.count() == 0) {
                         System.out.println("DataLoader: Sembrando preguntas de bienestar...");
@@ -178,109 +185,277 @@ public class DataLoader implements CommandLineRunner {
 
         private void seedPreguntas() {
                 List<com.bienestaranimal.app.model.PreguntaEvaluacion> preguntas = new ArrayList<>();
+
                 // NUTRICIÓN
                 preguntas.add(createPregunta(
-                                "¿El animal presenta buena condición corporal respecto a su especie, edad, sexo y estado fisiológico?",
-                                "NUTRICIÓN", "Excelente", null, "Bueno", null, "Pobre (1 o 5)", 5, 4, 3, 2, 1));
+                                "1. ¿El animal presenta buena condición corporal respecto a su especie, edad, sexo y estado fisiológico?",
+                                "NUTRICIÓN",
+                                "3", null, "2 o 4", null, "1 o 5",
+                                5, 0, 3, 0, 1)); // Mapping A=5 (Best), B=3 (Mid), C=1 (Worst) based on user's pattern
+                                                 // A>B>C generally?
+                // Wait, user said "A: 3 B: 2 o 4 C: 1 o 5". This looks like Body Condition
+                // Score (BCS). 3 is optimal.
+                // If 3 is optimal, that should be max points (5).
+                // 2 or 4 is sub-optimal (maybe 3 points).
+                // 1 or 5 is bad (1 point).
+                // This creates a challenge if standard is strict 1-5 points. I will map logical
+                // "Good/Bad" to 5/1 points for calculation but keep text labels.
+
                 preguntas.add(createPregunta(
-                                "¿La dieta es adecuada en nutrientes (según especie, edad, sexo, estado fisiológico y salud) y son seguros para ellos?",
-                                "NUTRICIÓN", "Si, totalmente", null, "Aceptable", null, "No, inadecuada", 5, 4, 3, 2,
-                                1));
-                preguntas.add(createPregunta("¿La comida que se ofrece al animal está en buenas condiciones?",
-                                "NUTRICIÓN", "Excelente estado", null, "Aceptable", null, "Mal estado", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿La preparación de la comida es higiénica?", "NUTRICIÓN", "Muy higiénica",
-                                null, "Aceptable", null, "Antitigénica", 5, 4, 3, 2, 1));
+                                "2. ¿La dieta es adecuada en nutrientes (según especie, edad, sexo, estado fisiológico y salud) y son seguros para ellos?",
+                                "NUTRICIÓN",
+                                "Si", null, null, null, "No, no son adecuados",
+                                5, 0, 0, 0, 1));
+
                 preguntas.add(createPregunta(
-                                "¿La presentación de la comida corresponde con las necesidades de cada individuo?",
-                                "NUTRICIÓN", "Si, óptima", null, "Parcialmente", null, "Inadecuada", 5, 4, 3, 2, 1));
+                                "3. ¿La comida que se ofrece al animal está en buenas condiciones?",
+                                "NUTRICIÓN",
+                                "Si, no tiene alteraciones",
+                                "Un alimento o porción presenta una alteración",
+                                "Uno o más alimentos o porción presentan más de una alteración",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
                 preguntas.add(createPregunta(
-                                "¿El agua que se ofrece al animal está en buenas condiciones macroscópicas?",
-                                "NUTRICIÓN", "Cristalina", null, "Aceptable", null, "Sucia / No potable", 5, 4, 3, 2,
-                                1));
-                preguntas.add(createPregunta("¿El agua proporcionada es suficiente y accesible en todo momento?",
-                                "NUTRICIÓN", "Suficiente y accesible", null, "Limitada", null, "Insuficiente", 5, 4, 3,
-                                2, 1));
+                                "4. ¿La preparación de la comida es higiénica?",
+                                "NUTRICIÓN",
+                                "Si", null, "No", null, null,
+                                5, 0, 1, 0, 0));
+
                 preguntas.add(createPregunta(
-                                "¿La presentación del agua respeta la forma en que se encuentra en la naturaleza?",
-                                "NUTRICIÓN", "Totalmente natural", null, "Aceptable", null, "Antinatural", 5, 4, 3, 2,
-                                1));
+                                "5. ¿La presentación de la comida corresponde con las necesidades de cada individuo?",
+                                "NUTRICIÓN",
+                                "Si",
+                                "Corresponde con algunas necesidades pero no las completa",
+                                "No cumple con las necesidades mínimas",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "6. ¿El agua que se ofrece al animal está en buenas condiciones macroscópicas? (color, olor, presencia de restos de comida u otras partículas, verdín)",
+                                "NUTRICIÓN",
+                                "Si",
+                                "Solo una característica no es adecuada, no impide la ingestión de agua",
+                                "Dos o más elementos a tener en cuenta no son adecuados o alguno obstaculiza la ingesta",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "7. ¿El agua proporcionada es suficiente y accesible en todo momento?",
+                                "NUTRICIÓN",
+                                "Si",
+                                "Cumple con una de las características",
+                                "No",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "8. ¿La presentación del agua respeta la forma en que se encuentra en la naturaleza?",
+                                "NUTRICIÓN",
+                                "Respeta la forma en la que la especie bebe en su ambiente",
+                                "Respeta parcialmente la forma en la que la especie bebe en su ambiente natural",
+                                "La presentación no respeta la forma en la que la especie bebe en su ambiente natural",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
                 // ALOJAMIENTO
                 preguntas.add(createPregunta(
-                                "¿Es el ambiente seguro para el animal y permite que exprese sus comportamientos?",
-                                "ALOJAMIENTO", "Totalmente seguro", null, "Parcialmente", null, "Inseguro", 5, 4, 3, 2,
-                                1));
-                preguntas.add(createPregunta("¿Es el sustrato adecuado para que el animal descanse cómodamente?",
-                                "ALOJAMIENTO", "Es muy adecuado", null, "Aceptable", null, "Es inadecuado", 5, 4, 3, 2,
-                                1));
-                preguntas.add(createPregunta("¿Las condiciones térmicas del recinto son adecuadas?", "ALOJAMIENTO",
-                                "Confort térmico total", null, "Deficiencia leve", null, "Riesgo vital", 5, 4, 3, 2,
-                                1));
-                preguntas.add(createPregunta("¿Las dimensiones del recinto son aptas?", "ALOJAMIENTO",
-                                "Dimensiones óptimas", null, "Dimensiones aceptables", null,
-                                "No permiten movimiento libre", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El diseño del recinto permite que el animal pueda elegir dónde estar?",
-                                "ALOJAMIENTO", "Sí, múltiples opciones", null, "Opciones limitadas", null,
-                                "No permite elegir", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El animal tiene acceso a medios de enriquecimiento ambiental?",
-                                "ALOJAMIENTO", "Si, plan completo", null, "Parcialmente", null, "Sin enriquecimiento",
-                                5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El alojamiento presenta un refugio adecuado?", "ALOJAMIENTO",
-                                "Protección total", null, "Protección parcial", null, "Sin refugio", 5, 4, 3, 2, 1));
+                                "9. ¿Es el ambiente seguro para el animal y permite que exprese sus comportamientos?",
+                                "ALOJAMIENTO",
+                                "Si",
+                                "Parcialmente, cumple alguna característica",
+                                "No cumple dos o más características",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
                 preguntas.add(createPregunta(
-                                "¿Permite el recinto minimizar las situaciones de estrés frente al público?",
-                                "ALOJAMIENTO", "Minimiza totalmente", null, "Parcialmente", null, "No permite", 5, 4, 3,
-                                2, 1));
-                preguntas.add(createPregunta("¿El animal presenta un plan de entrenamiento?", "ALOJAMIENTO",
-                                "Plan completo positivo", null, "Parcial / Incompleto", null,
-                                "Sin plan / Métodos negativos", 5, 4, 3, 2, 1));
+                                "10. ¿Es el sustrato adecuado para que el animal descanse cómodamente y muestre comportamientos propios de su especie?",
+                                "ALOJAMIENTO",
+                                "Es adecuado",
+                                "Impide la manifestación de algún comportamiento específico de la especie",
+                                "Es inadecuado para que el animal descanse cómodamente y/o impide la manifestación de varios comportamientos específicos de la especie",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "11. ¿Las condiciones térmicas del recinto son adecuadas para el confort del animal? (Tª, humedad y ventilación)",
+                                "ALOJAMIENTO",
+                                "Permiten el confort térmico del animal",
+                                "Uno de los aspectos es deficiente para mantener el confort térmico del animal sin poner en riesgo su vida",
+                                "Dos o más aspectos del recinto son deficientes o uno de ellos presenta deficiencias que ponen en riesgo la vida del animal.",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "12. ¿Las dimensiones del recinto son aptas para que el animal se mueva libremente? ¿Cumple con los mínimos de espacio requeridos?",
+                                "ALOJAMIENTO",
+                                "Las dimensiones se ajustan a las recomendaciones existentes y son adecuadas para que el animal se mueva libremente",
+                                "Permiten al animal moverse libremente pero dificultan la expresión de su cuerpo y son inferiores a las recomendaciones",
+                                "No permiten al animal moverse libremente y/o impiden la expresión propia de sus especies y están debajo de las recomendadas.",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "13. ¿El diseño del recinto permite que el animal pueda elegir dónde estar o qué hacer durante todo el día?",
+                                "ALOJAMIENTO",
+                                "Sí",
+                                "Permite al animal en varios aspectos durante al menos el periodo más activo del dia para la especie",
+                                "No permite al animal elegir en pocos o ningún aspecto y/o las oportunidades de elección y control sólo están presentes durante el periodo del día de menor actividad",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "14. ¿El animal tiene acceso a medios de enriquecimiento ambiental?",
+                                "ALOJAMIENTO",
+                                "Si, presenta un plan de enriquecimiento ambiental",
+                                "Parcialmente. No dispone de ningún plan de enriquecimiento ambiental.",
+                                "No",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "15. ¿El alojamiento presenta un refugio adecuado para el animal que lo proteja de las inclemencias del tiempo?",
+                                "ALOJAMIENTO",
+                                "Protegen totalmente de las inclemencias del tiempo.",
+                                "Protegen parcialmente",
+                                "No protegen o no hay refugio",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "16. ¿Permite el recinto que el animal pueda minimizar las situaciones de estrés frente al público? (que el animal pueda ocultarse o ponerse en un lugar poco visible)",
+                                "ALOJAMIENTO",
+                                "Si permite que el animal minimice las situaciones de estrés frente al público",
+                                "Parcialmente",
+                                "No permite que el animal no se exponga a situaciones de estrés",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "17. ¿El animal presenta un plan de entrenamiento?",
+                                "ALOJAMIENTO",
+                                "Si presenta un plan de entrenamiento completo",
+                                "El animal es entrenado pero solo en algunos aspectos como el entrenamiento veterinario y las maniobras de manejo",
+                                "No se realiza, se realiza por personal inadecuado o por metodos y tecnicas negativas",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
                 // SALUD
-                preguntas.add(createPregunta("¿El animal está libre de lesiones o heridas?", "SALUD", "Sí, no presenta",
-                                null, "Lesiones poco profundas", null, "Lesiones profundas o graves", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El animal está libre de crecimiento excesivo de pezuñas/dientes?",
-                                "SALUD", "Libre de sobrecrecimiento", null, "Sobrecrecimiento leve", null,
-                                "Sobrecrecimiento excesivo/doloroso", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El animal tiene un programa de salud preventiva?", "SALUD", "Si", null,
-                                "En desarrollo", null, "No", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El animal se desplaza sin dificultad o dolor?", "SALUD",
-                                "Sin dificultad ni dolor", null, "Cojera leve", null, "Cojera moderada a grave", 5, 4,
-                                3, 2, 1));
-                preguntas.add(createPregunta("¿Muestra el animal una actividad acorde con su especie?", "SALUD",
-                                "Totalmente acorde", null, "Neutral", null, "No se presenta actividad acorde", 5, 4, 3,
-                                2, 1));
-                preguntas.add(createPregunta("¿El animal parece sano y sin signos de enfermedad?", "SALUD",
-                                "Parece clínicamente sano", null, "Síntomas leves", null, "Síntomas moderados o graves",
-                                5, 4, 3, 2, 1));
+                preguntas.add(createPregunta(
+                                "18. ¿El animal está libre de lesiones o heridas?",
+                                "SALUD",
+                                "Sí, no presenta ni lesiones ni heridas",
+                                "Lesiones o heridas poco profundas, pequeñas o poco numerosas. Sin infección supuración ni moscas, con efectos leves y a corto plazo para el animal.",
+                                "Lesiones o heridas profundas, medianas o grandes, numerosas, con infección, supuración o moscas, con efectos moderados a graves o a largo plazo para el bienestar animal.",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "19. ¿El animal está libre de crecimiento excesivo o lesiones en pezuñas, uñas, garras, dientes?",
+                                "SALUD",
+                                "Libre de sobrecrecimiento y lesiones",
+                                "Sin lesiones pero pezuñas, manos dientes con crecimiento excesivo leve o moderado",
+                                "Presenta sobrecrecimiento excesivo o lesiones graves",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "20. ¿El animal tiene un programa de salud preventiva y de urgencia?",
+                                "SALUD",
+                                "Si", null,
+                                "No",
+                                null, null,
+                                5, 0, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "21. ¿El animal se desplaza sin dificultad o dolor?",
+                                "SALUD",
+                                "El animal se mueve sin dificultad ni signos de dolor.",
+                                "El animal presenta cojera leve",
+                                "El animal presenta cojera de moderado a grave y/o hay signos de dolor evidentes al caminar",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "22. ¿Muestra el animal una actividad acorde con su especie?",
+                                "SALUD",
+                                "Se ajusta al ritmo circadiano (ciclo natural de cambios físicos, mentales y de comportamiento que experimenta el cuerpo en un ciclo de 24 h) de la especie en vida libre.",
+                                null,
+                                "No se presenta una actividad acorde al ritmo circadiano de su especie",
+                                null, null,
+                                5, 0, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "23. ¿El animal parece sano y sin signos de enfermedad?",
+                                "SALUD",
+                                "Parece clínicamente sano",
+                                "Síntomas leves o recientes de enfermedad con un efecto mínimo en el bienestar animal o con buen pronóstico",
+                                "Síntomas moderados o graves, síntomas de larga duración, con efectos negativos en el bienestar animal y/o pronóstico desfavorable",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
                 // COMPORTAMIENTO
-                preguntas.add(createPregunta("¿El animal muestra algún tipo de comportamiento anormal?",
-                                "COMPORTAMIENTO", "No muestra", null, "Muestra signos leves", null,
-                                "Muestra signos moderados graves", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El animal interactúa con el enriquecimiento ambiental?",
-                                "COMPORTAMIENTO", "Si, interactúa frecuentemente", null, "Muestra interés ocasional",
-                                null, "No muestra interés", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El animal realiza los comportamientos específicos de la especie?",
-                                "COMPORTAMIENTO", "Sí, totalmente", null, "Solo algunos", null,
-                                "No corresponde y causa estrés", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿Utiliza el animal todo el espacio disponible?", "COMPORTAMIENTO",
-                                "Usa todo el espacio", null, "Usa siempre los mismos espacios", null,
-                                "No utiliza gran parte", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El animal es indiferente a la presencia del público?", "COMPORTAMIENTO",
-                                "Indiferente o positivo", null, "Indiferencia tensa", null, "Miedo, agresividad", 5, 4,
-                                3, 2, 1));
-                preguntas.add(createPregunta("¿El animal explora el recinto?", "COMPORTAMIENTO",
-                                "Se observa exploración activa", null, "Solo ante estímulos nuevos", null,
-                                "No se observa exploración", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿Tiene el animal una relación positiva con sus cuidadores?",
-                                "COMPORTAMIENTO", "Alerta/Relación Muy Positiva", null, "Indiferencia", null,
-                                "Miedo, comportamiento agonístico", 5, 4, 3, 2, 1));
-                // ESTADO MENTAL
-                preguntas.add(createPregunta("¿El animal parece estar en un estado emocional positivo?",
-                                "ESTADO MENTAL", "Totalmente de acuerdo (Relajado/Juguetón)", null, "Neutral", null,
-                                "En desacuerdo (Apático/Ansioso)", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿Se observa al animal con comportamientos de anticipación positiva?",
-                                "ESTADO MENTAL", "Si, frecuentemente", null, "A veces", null, "Nunca", 5, 4, 3, 2, 1));
-                preguntas.add(createPregunta("¿El animal muestra comportamientos de frustración o aburrimiento?",
-                                "ESTADO MENTAL", "Nunca", null, "Ocasionalmente", null, "Frecuentemente", 5, 4, 3, 2,
-                                1));
+                preguntas.add(createPregunta(
+                                "24. ¿El animal muestra algún tipo de comportamiento anormal? (estereotipias, apatías, etc)",
+                                "COMPORTAMIENTO",
+                                "No muestra signos de comportamiento anormal",
+                                "Muestra signos leves de comportamiento anormal",
+                                "Muestra signos moderados graves de comportamiento anormal, o varios de ellos.",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "25. ¿El animal interactúa con el enriquecimiento ambiental?",
+                                "COMPORTAMIENTO",
+                                "Si, interactúa directamente o indirectamente",
+                                "Muestra interés por el EA",
+                                "No muestra interés no hace uso del EA",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "26. ¿El animal realiza los comportamientos específicos de la especie que corresponden con sus necesidades y dinámicas?",
+                                "COMPORTAMIENTO",
+                                "Sí, corresponde con los comportamientos naturales de su especie.",
+                                "No corresponde pero no causa estrés en el animal",
+                                "No corresponde y causa estrés en el animal",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "27. ¿Utiliza el animal todo el espacio disponible del recinto?",
+                                "COMPORTAMIENTO",
+                                "Usa gran parte o todo el espacio disponible.",
+                                "Usa siempre los mismos espacios del recinto",
+                                "No utiliza gran parte del espacio disponible, se limita a una zona mínima",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "28. ¿El animal es indiferente a la presencia del público, personal desconocido u observadores?",
+                                "COMPORTAMIENTO",
+                                "Indiferente o positivo", null,
+                                "Miedo ocultamiento, agresividad, congelación.",
+                                null, null,
+                                5, 0, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "29. ¿El animal explora el recinto y sus alrededores y reacciona a estímulos relevantes?",
+                                "COMPORTAMIENTO",
+                                "Se observa exploración",
+                                "Solo se observa exploración en respuesta a estímulos nuevos",
+                                "No se observa exploración",
+                                null, null,
+                                5, 3, 1, 0, 0));
+
+                preguntas.add(createPregunta(
+                                "30. ¿Tiene el animal una relación positiva con sus cuidadores?",
+                                "COMPORTAMIENTO",
+                                "Alerta",
+                                "Indiferencia",
+                                "Miedo, comportamiento agonístico.",
+                                null, null,
+                                5, 3, 1, 0, 0));
 
                 preguntaRepository.saveAll(preguntas);
         }

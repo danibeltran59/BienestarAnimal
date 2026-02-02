@@ -78,7 +78,7 @@ async function handleLogin(e) {
         const token = data.token ? data.token : (typeof data === 'string' ? data : null);
 
         if (token) {
-            localStorage.setItem('jwt_token', token);
+            sessionStorage.setItem('jwt_token', token);
             window.location.href = 'dashboard.html';
         } else {
             throw new Error("Token no recibido");
@@ -94,6 +94,6 @@ async function handleLogin(e) {
 
 function handleLogout(e) {
     e.preventDefault();
-    localStorage.removeItem('jwt_token');
+    sessionStorage.removeItem('jwt_token');
     window.location.href = 'index.html';
 }

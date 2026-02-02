@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Api } from '../services/api';
 import Layout from '../components/Layout';
+import UserDropdown from '../components/UserDropdown';
 import { Plus, Search, Camera, Trash2, Edit2, X } from 'lucide-react';
 
 const Animals = () => {
@@ -99,9 +100,12 @@ const Animals = () => {
                     <h1>Censo Operativo</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Administración de sujetos bajo custodia</p>
                 </div>
-                <button onClick={() => handleOpenModal()} className="btn btn-primary">
-                    <Plus size={20} /> Registrar Nuevo
-                </button>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <button onClick={() => handleOpenModal()} className="btn btn-primary">
+                        <Plus size={20} /> Registrar Nuevo
+                    </button>
+                    <UserDropdown />
+                </div>
             </header>
 
             <div className="glass-panel" style={{ padding: '1rem', margin: 'bottom 2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>

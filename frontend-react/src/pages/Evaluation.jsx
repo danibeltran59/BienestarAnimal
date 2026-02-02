@@ -1,83 +1,123 @@
 import React, { useState, useEffect } from 'react';
 import { Api } from '../services/api';
 import Layout from '../components/Layout';
+import UserDropdown from '../components/UserDropdown';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Save, ChevronRight, ChevronLeft, Info } from 'lucide-react';
+import { Save } from 'lucide-react';
 
 const Evaluation = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const animalIdFromQuery = searchParams.get('animalId');
+    const evaluationId = searchParams.get('id');
+    const isEditMode = !!evaluationId;
 
     const [animals, setAnimals] = useState([]);
+    const [questions, setQuestions] = useState([]);
     const [selectedAnimalId, setSelectedAnimalId] = useState(animalIdFromQuery || '');
     const [evaluador, setEvaluador] = useState('');
-    const [respuestas, setRespuestas] = useState(Array(18).fill(3)); // Initial value 3 (Neutral/Good)
+    // respuestas: Map of QuestionId -> { puntos: 5, comentario: "...", seleccion: "A" }
+    const [respuestas, setRespuestas] = useState({});
     const [notas, setNotas] = useState('');
     const [loading, setLoading] = useState(true);
-
-    const questions = [
-        // 1. Alimentación
-        { id: 1, text: "¿El animal tiene acceso constante a agua limpia y fresca?", category: "Alimentación" },
-        { id: 2, text: "¿La dieta es nutricionalmente equilibrada y adecuada para su especie?", category: "Alimentación" },
-        { id: 3, text: "¿El animal mantiene un peso corporal óptimo (ni obeso ni emaciado)?", category: "Alimentación" },
-        // 2. Alojamiento
-        { id: 4, text: "¿El recinto proporciona suficiente espacio para moverse libremente?", category: "Alojamiento" },
-        { id: 5, text: "¿El refugio protege adecuadamente contra las inclemencias climáticas?", category: "Alojamiento" },
-        { id: 6, text: "¿La superficie del suelo es cómoda y segura para el animal?", category: "Alojamiento" },
-        // 3. Estado Sanitario
-        { id: 7, text: "¿El animal está libre de signos evidentes de enfermedad o lesiones?", category: "Salud" },
-        { id: 8, text: "¿Se cumple rigurosamente con el plan de vacunación y desparasitación?", category: "Salud" },
-        { id: 9, text: "¿El animal muestra una movilidad normal y sin dolor aparente?", category: "Salud" },
-        // 4. Comportamiento
-        { id: 10, text: "¿El animal manifiesta comportamientos naturales de su especie?", category: "Comportamiento" },
-        { id: 11, text: "¿La interacción con otros animales (si aplica) es pacífica y social?", category: "Comportamiento" },
-        { id: 12, text: "¿El animal se muestra curioso y alerta ante estímulos del entorno?", category: "Comportamiento" },
-        // 5. Estado Emocional
-        { id: 13, text: "¿El animal parece relajado y tranquilo en su entorno habitual?", category: "Emocional" },
-        { id: 14, text: "¿La relación con los cuidadores humanos es de confianza y sin miedo?", category: "Emocional" },
-        { id: 15, text: "¿El animal está libre de comportamientos estereotipados (balanceos, etc.)?", category: "Emocional" },
-        // 6. Higiene y Entorno
-        { id: 16, text: "¿El recinto se encuentra en condiciones de higiene óptimas?", category: "Entorno" },
-        { id: 17, text: "¿Existe un programa de enriquecimiento ambiental activo y variado?", category: "Entorno" },
-        { id: 18, text: "¿Los niveles de ruido y luz son adecuados y no causan estrés?", category: "Entorno" }
-    ];
 
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const data = await Api.getAnimals();
-                setAnimals(data);
+                const [animalsData, questionsData] = await Promise.all([
+                    Api.getAnimals(),
+                    Api.getQuestions()
+                ]);
+                setAnimals(animalsData);
+                setQuestions(questionsData);
+
+                if (isEditMode) {
+                    const evalData = await Api.getEvaluationById(evaluationId);
+                    setSelectedAnimalId(evalData.animal.id);
+                    setEvaluador(evalData.evaluador);
+                    setNotas(evalData.notas);
+
+                    const answersMap = {};
+                    if (evalData.respuestasDetalladas) {
+                        evalData.respuestasDetalladas.forEach(ans => {
+                            answersMap[ans.pregunta.id] = {
+                                seleccion: ans.seleccion,
+                                puntos: ans.puntos,
+                                comentario: ans.comentario
+                            };
+                        });
+                    }
+                    setRespuestas(answersMap);
+                }
             } catch (err) {
-                console.error("Error loading animals:", err);
+                console.error("Error loading evaluation data:", err);
+                alert("Error cargando los datos del protocolo.");
             } finally {
                 setLoading(false);
             }
         };
         loadInitialData();
-    }, []);
+    }, [isEditMode, evaluationId]);
 
-    const handleRadioChange = (index, value) => {
-        const newRespuestas = [...respuestas];
-        newRespuestas[index] = parseInt(value);
-        setRespuestas(newRespuestas);
+    const handleScoreChange = (qId, score) => {
+        // Map score 1-5 to A-E for backend compatibility if needed, or just store points
+        // Assuming 5=A, 4=B, 3=C, 2=D, 1=E as per previous logic
+        const mapSel = score === 5 ? 'A' : score === 4 ? 'B' : score === 3 ? 'C' : score === 2 ? 'D' : 'E';
+
+        setRespuestas(prev => ({
+            ...prev,
+            [qId]: {
+                ...prev[qId],
+                puntos: parseInt(score),
+                seleccion: mapSel
+            }
+        }));
+    };
+
+    const handleCommentChange = (qId, comment) => {
+        setRespuestas(prev => ({
+            ...prev,
+            [qId]: {
+                ...prev[qId],
+                comentario: comment
+            }
+        }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!selectedAnimalId) return alert("Por favor, selecciona un animal.");
 
-        // Calculate global score (average 1-5 scaled to 0-100)
-        const total = respuestas.reduce((a, b) => a + b, 0);
-        const score0to100 = Math.round(((total / (questions.length * 5)) * 100));
+        // Check completion (ensure points are selected for all questions)
+        const answeredCount = Object.keys(respuestas).filter(k => respuestas[k].puntos).length;
+        if (answeredCount < questions.length) {
+            const missing = questions.length - answeredCount;
+            if (!window.confirm(`Faltan ${missing} preguntas por responder. ¿Deseas guardar de todas formas?`)) {
+                return;
+            }
+        }
+
+        let totalPts = 0;
+        let maxPossible = questions.length * 5;
+        Object.values(respuestas).forEach(ans => totalPts += (ans.puntos || 0));
+
+        const score0to100 = maxPossible > 0 ? Math.round((totalPts / maxPossible) * 100) : 0;
+
+        const respuestasDetalladas = Object.keys(respuestas).map(qId => ({
+            pregunta: { id: parseInt(qId) },
+            seleccion: respuestas[qId].seleccion || 'E',
+            puntos: respuestas[qId].puntos || 0,
+            comentario: respuestas[qId].comentario || ''
+        }));
 
         const evaluationData = {
+            id: isEditMode ? parseInt(evaluationId) : null,
             animal: { id: parseInt(selectedAnimalId) },
             fechaHora: new Date().toISOString(),
             evaluador: evaluador || 'Técnico de Bienestar',
             puntuacionGlobal: score0to100,
             nivelConfianza: 5,
-            respuestas: respuestas,
+            respuestasDetalladas: respuestasDetalladas,
             notas: notas
         };
 
@@ -90,13 +130,20 @@ const Evaluation = () => {
         }
     };
 
+    if (loading) return (
+        <Layout>
+            <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando protocolo...</div>
+        </Layout>
+    );
+
     return (
         <Layout>
             <header className="content-header">
                 <div>
                     <h1>Protocolo de Auditoría</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Evaluación técnica del bienestar animal (Protocolo Welfare Quality)</p>
+                    <p style={{ color: 'var(--text-muted)' }}>Evaluación técnica del bienestar animal (Escala 1-5)</p>
                 </div>
+                <UserDropdown />
             </header>
 
             <form onSubmit={handleSubmit}>
@@ -129,37 +176,75 @@ const Evaluation = () => {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {questions.map((q, i) => (
-                        <div key={q.id} className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div style={{ flex: '1', minWidth: '300px' }}>
-                                <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase' }}>{q.category}</span>
-                                <p style={{ margin: '0.25rem 0', fontWeight: 500 }}>{q.id}. {q.text}</p>
+                    {questions.map((q) => {
+                        const currentAns = respuestas[q.id] || {};
+                        return (
+                            <div key={q.id} className="glass-panel" style={{ padding: '1.5rem' }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase' }}>{q.categoria}</span>
+                                    <p style={{ margin: '0.25rem 0', fontWeight: 500, fontSize: '0.95rem' }}>{q.texto}</p>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>Puntuación:</span>
+                                    {[1, 2, 3, 4, 5].map((score) => (
+                                        <label
+                                            key={score}
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: 'pointer',
+                                                width: '40px',
+                                                height: '40px',
+                                                borderRadius: '50%',
+                                                background: currentAns.puntos === score
+                                                    ? (score >= 4 ? 'var(--primary)' : score <= 2 ? 'var(--danger)' : 'var(--accent)')
+                                                    : 'rgba(255,255,255,0.05)',
+                                                border: currentAns.puntos === score ? '2px solid white' : '1px solid rgba(255,255,255,0.1)',
+                                                transition: 'all 0.2s',
+                                                boxShadow: currentAns.puntos === score ? '0 0 10px rgba(0,0,0,0.3)' : 'none'
+                                            }}
+                                            title={`${score} Puntos`}
+                                        >
+                                            <span style={{ fontWeight: 'bold', color: currentAns.puntos === score ? '#fff' : 'var(--text-muted)' }}>{score}</span>
+                                            <input
+                                                type="radio"
+                                                name={`q-${q.id}`}
+                                                value={score}
+                                                checked={currentAns.puntos === score}
+                                                onChange={() => handleScoreChange(q.id, score)}
+                                                style={{ display: 'none' }}
+                                            />
+                                        </label>
+                                    ))}
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
+                                        (1=Peor, 5=Mejor)
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Comentario u observación sobre esta pregunta..."
+                                        style={{ fontSize: '0.85rem', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                        value={currentAns.comentario || ''}
+                                        onChange={(e) => handleCommentChange(q.id, e.target.value)}
+                                    />
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                {[1, 2, 3, 4, 5].map(val => (
-                                    <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '0.25rem' }}>
-                                        <input
-                                            type="radio"
-                                            name={`q${q.id}`}
-                                            value={val}
-                                            checked={respuestas[i] === val}
-                                            onChange={(e) => handleRadioChange(i, e.target.value)}
-                                            style={{ cursor: 'pointer', accentColor: 'var(--primary)' }}
-                                        />
-                                        <span style={{ fontSize: '0.7rem', color: respuestas[i] === val ? 'var(--primary)' : 'var(--text-muted)' }}>{val}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 <div className="glass-panel" style={{ padding: '2rem', marginTop: '2rem' }}>
-                    <label className="form-label">Observaciones Técnicas Adicionales</label>
+                    <label className="form-label">Observaciones Generales</label>
                     <textarea
                         className="form-control"
                         rows="4"
-                        placeholder="Registra cualquier anomalía o comentario relevante..."
+                        placeholder="Conclusiones generales de la auditoría..."
                         value={notas}
                         onChange={(e) => setNotas(e.target.value)}
                     ></textarea>
@@ -169,7 +254,7 @@ const Evaluation = () => {
                             Cancelar
                         </button>
                         <button type="submit" className="btn btn-primary">
-                            <Save size={20} /> Finalizar y Sincronizar
+                            <Save size={20} /> {isEditMode ? 'Actualizar Auditoría' : 'Finalizar y Sincronizar'}
                         </button>
                     </div>
                 </div>

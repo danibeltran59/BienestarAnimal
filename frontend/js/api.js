@@ -153,6 +153,13 @@ const Api = {
         return this._handleResponse(response);
     },
 
+    async getCurrentUser() {
+        if (USE_MOCK_DATA) {
+            return { email: 'mock@test.com', role: 'ADMIN' };
+        }
+        return this._fetchWithAuth(`${API_BASE_URL}/usuarios/me`);
+    },
+
     // --- Animals ---
     async getAnimals() {
         if (USE_MOCK_DATA) return mockStore.getAnimals();
@@ -264,7 +271,7 @@ const Api = {
         const formData = new FormData();
         formData.append('file', file);
 
-        const token = localStorage.getItem('jwt_token');
+        const token = sessionStorage.getItem('jwt_token');
         const response = await fetch(`${API_BASE_URL}/files/upload`, {
             method: 'POST',
             headers: {
@@ -277,7 +284,7 @@ const Api = {
 
     // --- Helpers ---
     async _fetchWithAuth(url, options = {}) {
-        const token = localStorage.getItem('jwt_token');
+        const token = sessionStorage.getItem('jwt_token');
         const headers = {
             'Content-Type': 'application/json',
             'Authorization': token ? `Bearer ${token}` : ''
@@ -295,6 +302,7 @@ const Api = {
     async _handleResponse(response) {
         if (!response.ok) {
             if (response.status === 403 || response.status === 401) {
+                sessionStorage.removeItem('jwt_token');
                 window.location.href = 'index.html';
                 throw new Error('Unauthorized');
             }

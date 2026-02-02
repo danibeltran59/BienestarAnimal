@@ -111,6 +111,11 @@ class MockStore {
     saveEvaluations(evals) {
         this._setItem('mock_evaluations', JSON.stringify(evals));
     }
+
+    getEvaluationById(id) {
+        const evals = this.getEvaluations();
+        return evals.find(e => e.id == id);
+    }
 }
 
 const mockStore = new MockStore();
@@ -124,7 +129,7 @@ const api = axios.create({
 
 // Interceptor for JWT token
 api.interceptors.request.use(config => {
-    const token = localStorage.getItem('jwt_token');
+    const token = sessionStorage.getItem('jwt_token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -136,7 +141,7 @@ api.interceptors.response.use(
     response => response.data,
     error => {
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-            localStorage.removeItem('jwt_token');
+            sessionStorage.removeItem('jwt_token');
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }
@@ -159,6 +164,13 @@ export const Api = {
             return { message: "Usuario registrado (Mock)" };
         }
         return api.post('/usuarios/register', userData);
+    },
+
+    async getCurrentUser() {
+        if (USE_MOCK_DATA) {
+            return { email: 'mock@test.com', role: 'ADMIN' };
+        }
+        return api.get('/usuarios/me');
     },
 
     // --- Animals ---
@@ -243,6 +255,22 @@ export const Api = {
             return { message: "Eliminado (Mock)" };
         }
         return api.delete(`/evaluaciones/${id}`);
+    },
+
+    async getEvaluationById(id) {
+        if (USE_MOCK_DATA) return mockStore.getEvaluationById(id);
+        return api.get(`/evaluaciones/${id}`);
+    },
+
+    async getQuestions() {
+        if (USE_MOCK_DATA) {
+            // Mock questions matching the backend structure
+            return [
+                { id: 1, texto: "¿El animal presenta buena condición corporal?", categoria: "NUTRICIÓN", opcionA: "Excelente", puntosA: 5, opcionB: "Bueno", puntosB: 4, opcionC: "Regular", puntosC: 3, opcionD: "Pobre", puntosD: 2, opcionE: "Muy Pobre", puntosE: 1 },
+                // ... minimal mock set for dev if needed, but we rely on backend mostly
+            ];
+        }
+        return api.get('/preguntas');
     },
 
     // --- File Upload ---

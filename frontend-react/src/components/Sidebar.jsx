@@ -1,9 +1,11 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { LayoutDashboard, PawPrint, ClipboardCheck, BarChart3, Lock } from 'lucide-react'
 
 const Sidebar = () => {
     const location = useLocation()
+    const { logout } = useAuth()
 
     const navLinks = [
         { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
@@ -29,7 +31,7 @@ const Sidebar = () => {
                     </li>
                 ))}
                 <li style={{ marginTop: 'auto' }}>
-                    <a href="#" id="logoutBtn" style={{ color: 'var(--danger)' }}>
+                    <a href="#" id="logoutBtn" onClick={(e) => { e.preventDefault(); logout(); }} style={{ color: 'var(--danger)' }}>
                         <span><Lock size={20} /></span> Desconexión
                     </a>
                 </li>

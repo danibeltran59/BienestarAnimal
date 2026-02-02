@@ -8,24 +8,36 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('jwt_token');
+        const token = sessionStorage.getItem('jwt_token');
         if (token) {
-            // Ideally we would fetch user profile here
-            // For now, we just assume logged in if token exists
-            setUser({ token });
+            // Fetch user profile from backend
+            Api.getCurrentUser()
+                .then(data => {
+                    setUser({ token, email: data.email, role: data.role });
+                })
+                .catch(err => {
+                    console.error('Error fetching user profile:', err);
+                    sessionStorage.removeItem('jwt_token');
+                    setUser(null);
+                })
+                .finally(() => setLoading(false));
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
     const login = async (email, password) => {
         const data = await Api.login(email, password);
-        localStorage.setItem('jwt_token', data.token);
-        setUser({ token: data.token });
+        sessionStorage.setItem('jwt_token', data.token);
+
+        // Fetch user profile after login
+        const userProfile = await Api.getCurrentUser();
+        setUser({ token: data.token, email: userProfile.email, role: userProfile.role });
         return data;
     };
 
     const logout = () => {
-        localStorage.removeItem('jwt_token');
+        sessionStorage.removeItem('jwt_token');
         setUser(null);
         window.location.href = '/login';
     };

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -49,6 +50,17 @@ public class UsuarioService {
         String token = jwtUtils.generateToken(usuario);
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
+        response.put("role", usuario.getRole().name());
+        return response;
+    }
+
+    public Map<String, String> getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Map<String, String> response = new HashMap<>();
+        response.put("email", usuario.getEmail());
         response.put("role", usuario.getRole().name());
         return response;
     }

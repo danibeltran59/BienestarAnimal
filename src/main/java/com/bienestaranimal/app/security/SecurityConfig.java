@@ -38,10 +38,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/usuarios/**").permitAll() // Login & Register
                         .requestMatchers("/api/files/download/**").permitAll() // Public images
-                        .requestMatchers("/", "/index.html", "/assets/**", "/static/**", "/manifest.json", "/sw.js",
-                                "/*.html")
-                        .permitAll() // Static resources
-                        .anyRequest().authenticated())
+                        .requestMatchers("/api/**").authenticated() // Secure all other API endpoints
+                        .anyRequest().permitAll()) // Permit all other requests (SPA routes, static files)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

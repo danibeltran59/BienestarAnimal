@@ -123,13 +123,14 @@ const mockStore = new MockStore();
 const api = axios.create({
     baseURL: '/api',
     headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
     }
 });
 
 // Interceptor for JWT token
 api.interceptors.request.use(config => {
-    const token = sessionStorage.getItem('jwt_token');
+    const token = localStorage.getItem('jwt_token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -141,7 +142,7 @@ api.interceptors.response.use(
     response => response.data,
     error => {
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-            sessionStorage.removeItem('jwt_token');
+            localStorage.removeItem('jwt_token');
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }

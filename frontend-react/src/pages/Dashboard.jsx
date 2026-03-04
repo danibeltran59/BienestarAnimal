@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Api } from '../services/api';
 import Layout from '../components/Layout';
 import UserDropdown from '../components/UserDropdown';
-import { AlertTriangle, Activity, Brain } from 'lucide-react';
+import { AlertTriangle, Activity, Brain, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { usePWA } from '../hooks/usePWA';
 
 const Dashboard = () => {
+    const { installable, isIOS, isStandalone, install } = usePWA();
     const [stats, setStats] = useState({ totalAnimals: '--', totalEvaluations: '--', avgWelfare: '--%' });
     const [criticalAlerts, setCriticalAlerts] = useState([]);
     const [recentActivity, setRecentActivity] = useState([]);
@@ -20,52 +22,76 @@ const Dashboard = () => {
                     Api.getAllEvaluations()
                 ]);
 
+
                 // 1. Calculate Stats
                 const totalAnimals = animals.length;
                 const totalEvaluations = evaluations.length;
                 let avg = 0;
 
                 if (totalEvaluations > 0) {
-                    avg = Math.round(evaluations.reduce((s, e) => s + (e.puntuacionGlobal || 0), 0) / totalEvaluations);
+                    const sum = (evaluations || []).reduce((s, e) => s + (e?.puntuacionGlobal || 0), 0);
+                    avg = Math.round(sum / totalEvaluations);
                 }
 
                 setStats({
                     totalAnimals,
                     totalEvaluations,
-                    avgWelfare: `${avg}%`
+                    avgWelfare: `${avg}% `
                 });
 
-                // 2. Mental Status
-                let statusLabel = "ESTADO: ÓPTIMO";
-                let statusColor = "var(--accent)";
-                if (avg < 60) {
-                    statusLabel = "ESTADO: CRÍTICO";
-                    statusColor = "var(--danger)";
-                } else if (avg < 85) {
-                    statusLabel = "ESTADO: ESTABLE";
-                    statusColor = "var(--warning)";
+                // 2. Mental Status (Global Average of all evaluations)
+                let mentalScoreSum = 0;
+                let validMentalCount = 0;
+
+                evaluations.forEach(ev => {
+                    // Use the 5th domain score (puntuacionMental) which is calculated on backend
+                    if (ev.puntuacionMental !== undefined && ev.puntuacionMental !== null) {
+                        mentalScoreSum += ev.puntuacionMental;
+                        validMentalCount++;
+                    }
+                });
+
+                const mentalIndex = validMentalCount > 0 ? Math.round(mentalScoreSum / validMentalCount) : 0;
+
+                let statusLabel = "PENDIENTE";
+                let statusColor = "var(--text-muted)";
+
+                if (validMentalCount > 0) {
+                    if (mentalIndex >= 80) {
+                        statusLabel = "BIENESTAR ÓPTIMO";
+                        statusColor = "var(--primary)";
+                    } else if (mentalIndex >= 60) {
+                        statusLabel = "NIVEL ACEPTABLE";
+                        statusColor = "var(--warning)";
+                    } else {
+                        statusLabel = "CRÍTICO / INTERVENCIÓN";
+                        statusColor = "var(--danger)";
+                    }
                 }
 
                 setMentalStatus({
-                    index: `${avg}%`,
+                    index: validMentalCount > 0 ? `${mentalIndex}%` : '--%',
                     label: statusLabel,
                     color: statusColor
                 });
 
-                // 3. Critical Alerts (Last evaluation per animal < 75%)
+                // 3. Critical Alerts (Last evaluation per animal <= 60%)
                 const lastEvalsByAnimal = {};
                 evaluations.forEach(ev => {
-                    const id = ev.animal.id;
-                    if (!lastEvalsByAnimal[id] || new Date(ev.fechaHora) > new Date(lastEvalsByAnimal[id].fechaHora)) {
-                        lastEvalsByAnimal[id] = ev;
+                    // Use animalId from DTO if available, fallback to animal.id
+                    const id = ev.animalId || (ev.animal ? ev.animal.id : null);
+                    if (id) {
+                        if (!lastEvalsByAnimal[id] || new Date(ev.fechaHora) > new Date(lastEvalsByAnimal[id].fechaHora)) {
+                            lastEvalsByAnimal[id] = ev;
+                        }
                     }
                 });
 
                 const atRisk = Object.values(lastEvalsByAnimal)
-                    .filter(ev => ev.puntuacionGlobal < 60)
-                    .sort((a, b) => a.puntuacionGlobal - b.puntuacionGlobal);
+                    .filter(ev => ev && (ev.puntuacionGlobal !== undefined) && ev.puntuacionGlobal <= 60)
+                    .sort((a, b) => (a?.puntuacionGlobal || 0) - (b?.puntuacionGlobal || 0));
 
-                setCriticalAlerts(atRisk);
+                setCriticalAlerts(atRisk || []);
 
                 // 4. Recent Activity
                 const recent = [...evaluations].sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora)).slice(0, 10);
@@ -91,7 +117,41 @@ const Dashboard = () => {
                 <UserDropdown />
             </header>
 
-            <div className="dashboard-grid">
+            {(installable || isIOS) && !isStandalone && (
+                <div className="glass-panel" style={{
+                    padding: '1.25rem',
+                    marginBottom: '2rem',
+                    background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                    color: '#000',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderRadius: '16px'
+                }}>
+                    <div>
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Aplicación disponible</h3>
+                        <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>Descarga la App para una experiencia profesional</p>
+                    </div>
+                    <button
+                        onClick={install}
+                        className="btn"
+                        style={{
+                            background: '#000',
+                            color: '#fff',
+                            padding: '0.6rem 1.2rem',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            borderRadius: '12px'
+                        }}
+                    >
+                        <Download size={18} /> Descargar
+                    </button>
+                </div>
+            )}
+
+            <div className="dashboard-grid mobile-grid-2">
                 <div className="glass-panel stat-card">
                     <div className="stat-value">{stats.totalAnimals}</div>
                     <div className="stat-label">Stock de Fauna</div>
@@ -108,7 +168,7 @@ const Dashboard = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
                 {/* ALERTS SECTION */}
-                <section className="glass-panel" style={{ padding: '2rem', borderTop: '4px solid var(--danger)' }}>
+                <section className="glass-panel mobile-p-1-5" style={{ padding: '2rem', borderTop: '4px solid var(--danger)' }}>
                     <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <AlertTriangle size={20} /> ALERTAS CRÍTICAS
                     </h2>
@@ -131,7 +191,7 @@ const Dashboard = () => {
                                         <div style={{ fontSize: '1.2rem' }}>{ev.puntuacionGlobal < 60 ? '🔴' : '🟡'}</div>
                                         <div>
                                             <div style={{ fontWeight: 700, color: ev.puntuacionGlobal < 60 ? 'var(--danger)' : 'var(--warning)' }}>
-                                                {ev.animal.nombre}
+                                                {ev.animalNombre || (ev.animal ? ev.animal.nombre : 'Desconocido')}
                                             </div>
                                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                                                 Nivel: {ev.puntuacionGlobal}%
@@ -148,7 +208,7 @@ const Dashboard = () => {
                 </section>
 
                 {/* RECENT ACTIVITY */}
-                <section className="glass-panel" style={{ padding: '2rem' }}>
+                <section className="glass-panel mobile-p-1-5" style={{ padding: '2rem' }}>
                     <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Activity size={20} /> LOG OPERATIVO
                     </h2>
@@ -171,7 +231,7 @@ const Dashboard = () => {
                                         background: ev.puntuacionGlobal > 80 ? 'var(--accent)' : (ev.puntuacionGlobal > 60 ? 'var(--warning)' : 'var(--danger)')
                                     }}></div>
                                     <div style={{ fontSize: '0.85rem' }}>
-                                        <span style={{ fontWeight: 600 }}>{ev.animal ? ev.animal.nombre : 'S/N'}</span>
+                                        <span style={{ fontWeight: 600 }}>{ev.animalNombre || (ev.animal ? ev.animal.nombre : 'S/N')}</span>
                                         <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}> - {ev.evaluador || 'Sistema'}</span>
                                     </div>
                                 </div>
@@ -184,7 +244,7 @@ const Dashboard = () => {
                 </section>
 
                 {/* GENERAL STATUS */}
-                <section className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+                <section className="glass-panel mobile-p-1-5" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
                     <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Brain size={20} /> ESTADO MENTAL GBL
                     </h2>

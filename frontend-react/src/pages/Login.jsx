@@ -28,29 +28,14 @@ const Login = () => {
     };
 
     return (
-        <div className="login-container" style={{
-            height: '100vh',
-            width: '100vw',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            background: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=1920')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-        }}>
-            <div className="glass-panel login-card" style={{
-                padding: '3rem',
-                width: '90%',
-                maxWidth: '450px',
-            }}>
-                <h1 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--primary)', WebkitTextFillColor: 'var(--primary)' }}>
-                    {isLogin ? 'Bienestar' : 'Registro'}
-                </h1>
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '2.5rem' }}>
-                    {isLogin ? 'Gestión Profesional de Fauna' : 'Únete al equipo de cuidadores'}
-                </p>
+        <div className="login-page">
+            <div className="login-card glass-panel">
+                <div className="login-header">
+                    <h1>{isLogin ? 'Quantum' : 'Registro'}</h1>
+                    <p>{isLogin ? 'Gestión Profesional de Fauna' : 'Únete al equipo de cuidadores'}</p>
+                </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="login-form">
                     {!isLogin && (
                         <div className="form-group">
                             <label className="form-label">Nombre Completo</label>
@@ -90,23 +75,23 @@ const Login = () => {
                     </div>
 
                     {error && (
-                        <div className="text-danger" style={{ marginBottom: '1rem', textAlign: 'center', fontSize: '0.85rem' }}>
+                        <div className="text-danger login-error">
                             {error}
                         </div>
                     )}
 
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                    <button type="submit" className="btn btn-primary login-submit">
                         {isLogin ? 'Acceder al Portal' : 'Finalizar Registro'}
                     </button>
                 </form>
 
-                <p style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.9rem' }}>
+                <div className="login-footer">
                     {isLogin ? (
-                        <>¿Solicitar acceso? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(false); }} style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Crear cuenta nueva</a></>
+                        <p>¿No tienes cuenta? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(false); }}>Crear cuenta nueva</a></p>
                     ) : (
-                        <>¿Ya tienes cuenta? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(true); }} style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Inicia sesión aquí</a></>
+                        <p>¿Ya tienes cuenta? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(true); }}>Inicia sesión aquí</a></p>
                     )}
-                </p>
+                </div>
             </div>
         </div>
     );

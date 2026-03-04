@@ -38,6 +38,7 @@ public class Animal {
     private String notas;
 
     private String fotoUrl;
+    private String guiaManejoUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")

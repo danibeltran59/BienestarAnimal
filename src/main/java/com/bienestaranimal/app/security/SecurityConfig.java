@@ -38,6 +38,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/usuarios/**").permitAll() // Login & Register
                         .requestMatchers("/api/files/download/**").permitAll() // Public images
+                        .requestMatchers("/api/guias/file/**").permitAll() // PDF guides public access
                         .requestMatchers("/api/**").authenticated() // Secure all other API endpoints
                         .anyRequest().permitAll()) // Permit all other requests (SPA routes, static files)
                 .sessionManagement(session -> session
@@ -53,7 +54,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedHeaders(
+                Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "ngrok-skip-browser-warning"));
         configuration.setExposedHeaders(List.of("Authorization"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

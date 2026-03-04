@@ -43,6 +43,9 @@ public class Evaluacion {
     @Column(columnDefinition = "TEXT")
     private String notas;
 
+    @Column(columnDefinition = "TEXT")
+    private String planAccion;
+
     private String fotosUrl; // URLs separadas por coma
 
     @ManyToOne(fetch = FetchType.LAZY)

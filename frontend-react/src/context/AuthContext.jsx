@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = sessionStorage.getItem('jwt_token');
+        const token = localStorage.getItem('jwt_token');
         if (token) {
             // Fetch user profile from backend
             Api.getCurrentUser()
@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
                 })
                 .catch(err => {
                     console.error('Error fetching user profile:', err);
-                    sessionStorage.removeItem('jwt_token');
+                    localStorage.removeItem('jwt_token');
                     setUser(null);
                 })
                 .finally(() => setLoading(false));
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         const data = await Api.login(email, password);
-        sessionStorage.setItem('jwt_token', data.token);
+        localStorage.setItem('jwt_token', data.token);
 
         // Fetch user profile after login
         const userProfile = await Api.getCurrentUser();
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        sessionStorage.removeItem('jwt_token');
+        localStorage.removeItem('jwt_token');
         setUser(null);
         window.location.href = '/login';
     };

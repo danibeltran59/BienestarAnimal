@@ -13,8 +13,17 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // 1. Recursos estáticos directos (Imágenes, Guías, etc.)
+        registry.addResourceHandler("/guides/**")
+                .addResourceLocations("classpath:/static/guides/", "classpath:/public/guides/");
+
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations("classpath:/static/assets/");
+
+        // 2. Fallback para SPA (Single Page Application)
+        // Solo para rutas que NO sean de API ni ficheros con extensión
         registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/")
+                .addResourceLocations("classpath:/static/", "classpath:/public/")
                 .resourceChain(true)
                 .addResolver(new PathResourceResolver() {
                     @Override
@@ -22,8 +31,9 @@ public class WebConfig implements WebMvcConfigurer {
                         Resource requestedResource = location.createRelative(resourcePath);
                         if (requestedResource.exists() && requestedResource.isReadable()) {
                             return requestedResource;
-                        } else if (!resourcePath.startsWith("api") && !resourcePath.contains(".")) {
-                            // Fallback to index.html for SPA routing
+                        }
+                        // SPA fallback
+                        if (!resourcePath.startsWith("api") && !resourcePath.contains(".")) {
                             return location.createRelative("index.html");
                         }
                         return null;

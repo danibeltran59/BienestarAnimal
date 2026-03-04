@@ -3,8 +3,33 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/pwa-192x192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Bienestar Animal - Portal</title>
+    <script>
+        // Limpieza profunda de Service Workers y Caché para evitar conflictos con ngrok o versiones antiguas
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                for (let registration of registrations) {
+                    registration.unregister();
+                    console.log('Service Worker desregistrado con éxito');
+                }
+            });
+        }
+
+        if ('caches' in window) {
+            caches.keys().then(function (names) {
+                for (let name of names) {
+                    caches.delete(name);
+                    console.log('Caché eliminado:', name);
+                }
+            });
+        }
+    </script>
 </head>
 
 <body>

@@ -1,0 +1,22 @@
+-------------- CODIGO NGROK ---------------
+RDUI7O6U4A45PDOSY5GJTC53NTIMZGHW
+
+------------------------------------------------------------------------ PASOS PARA ABRIR EL TUNEL ------------------------------------------------------------------------
+Básicamente, el proceso es siempre el mismo. Si apagas el ordenador o cierras los programas, solo tienes que seguir estos 3 pasos en este orden:
+
+Enchufar la App: Inicia el servidor de Java (Spring Boot) en VS Code como haces siempre. Verifica que en tu navegador funcione entrando a localhost:8080.
+Abrir el Túnel: Abre una terminal y lanza el comando de ngrok:
+bash
+ngrok http 8080
+Copiar la URL Actual: ngrok http --url=haylee-decayedness-alica.ngrok-free.dev 8080
+Si tienes cuenta gratuita de Ngrok: La URL cambiará cada vez que cierres y abras el programa. 
+Tendrás que copiar la nueva URL (la que termina en .ngrok-free.app) y mandársela de nuevo a tu profesor.
+Si usas un dominio estático (como ese de alica.ngrok-free.dev que me has pasado): Esa URL no cambiará nunca. 
+Solo tienes que lanzar el comando y tu profesor siempre podrá entrar usando el mismo enlace de siempre.
+
+
+
+
+Enlace para profesor
+
+https://haylee-decayedness-alica.ngrok-free.dev

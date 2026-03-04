@@ -2,8 +2,8 @@ import React from 'react';
 
 /**
  * UpdatePrompt temporalmente desactivado.
- * El registro de PWA ahora se maneja vía 'inline' script en vite.config.js
- * para evitar errores de módulos virtuales ('virtual:pwa-register') en el build de Vercel.
+ * Se ha eliminado cualquier referencia a modulos virtuales 
+ * para asegurar la estabilidad del build en entornos cloud.
  */
 const UpdatePrompt = () => {
     return null;

@@ -1,36 +1,36 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vitejs.dev/config/
 export default defineConfig({
-    base: '/',
     plugins: [
         react(),
         VitePWA({
             registerType: 'autoUpdate',
-            injectRegister: 'auto',
+            // Cambiamos 'auto' por 'script' para evitar el error de "virtual module"
+            injectRegister: 'script',
+            workbox: {
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+                cleanupOutdatedCaches: true,
+                // Evitamos que el PWA intercepte rutas de API
+                navigateFallbackDenylist: [/^\/api/],
+            },
             manifest: {
-                id: '/',
-                start_url: '/',
-                scope: '/',
                 name: 'Bienestar Animal - Sistema de Gestión',
                 short_name: 'BienestarAnimal',
                 description: 'Sistema profesional para la gestión del bienestar animal',
                 theme_color: '#0f172a',
                 background_color: '#0f172a',
-                display: 'standalone',
-                orientation: 'portrait',
                 icons: [
                     {
                         src: 'pwa-192x192.png',
                         sizes: '192x192',
-                        type: 'image/png'
+                        type: 'image/png',
                     },
                     {
                         src: 'pwa-512x512.png',
                         sizes: '512x512',
-                        type: 'image/png'
+                        type: 'image/png',
                     },
                     {
                         src: 'pwa-512x512.png',
@@ -38,20 +38,9 @@ export default defineConfig({
                         type: 'image/png',
                         purpose: 'any maskable'
                     }
-                ]
+                ],
             },
-            devOptions: {
-                enabled: true
-            },
-            workbox: {
-                // No interceptar navegación de API
-                navigateFallbackDenylist: [/^\/api/],
-                skipWaiting: true,
-                clientsClaim: true,
-                // Solo precachear assets estáticos
-                globPatterns: ['**/*.{js,css,ico,png,webmanifest}']
-            }
-        })
+        }),
     ],
     server: {
         port: 3000,
@@ -63,7 +52,7 @@ export default defineConfig({
         }
     },
     build: {
-        outDir: 'dist',
-        emptyOutDir: true
-    }
-})
+        outDir: 'dist', // Aseguramos que Vercel encuentre la carpeta
+        emptyOutDir: true,
+    },
+});

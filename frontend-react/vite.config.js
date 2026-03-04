@@ -3,16 +3,16 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+    base: '/',
     plugins: [
         react(),
         VitePWA({
             registerType: 'autoUpdate',
-            // Cambiamos 'auto' por 'script' para evitar el error de "virtual module"
-            injectRegister: 'script',
+            // 'inline' inserta el registro directamente en el index.html
+            injectRegister: 'inline',
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
                 cleanupOutdatedCaches: true,
-                // Evitamos que el PWA intercepte rutas de API
                 navigateFallbackDenylist: [/^\/api/],
             },
             manifest: {
@@ -21,6 +21,8 @@ export default defineConfig({
                 description: 'Sistema profesional para la gestión del bienestar animal',
                 theme_color: '#0f172a',
                 background_color: '#0f172a',
+                display: 'standalone',
+                orientation: 'portrait',
                 icons: [
                     {
                         src: 'pwa-192x192.png',
@@ -52,7 +54,7 @@ export default defineConfig({
         }
     },
     build: {
-        outDir: 'dist', // Aseguramos que Vercel encuentre la carpeta
+        outDir: 'dist',
         emptyOutDir: true,
     },
 });

@@ -4,10 +4,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    base: '/',
     plugins: [
         react(),
         VitePWA({
             registerType: 'autoUpdate',
+            injectRegister: 'auto',
             manifest: {
                 id: '/',
                 start_url: '/',
@@ -39,14 +41,14 @@ export default defineConfig({
                 ]
             },
             devOptions: {
-                enabled: false
+                enabled: true
             },
             workbox: {
-                // No interceptar navegacion - deja que el navegador vaya directo al servidor
-                navigateFallback: null,
+                // No interceptar navegación de API
+                navigateFallbackDenylist: [/^\/api/],
                 skipWaiting: true,
                 clientsClaim: true,
-                // Solo precachear assets estáticos, NO index.html
+                // Solo precachear assets estáticos
                 globPatterns: ['**/*.{js,css,ico,png,webmanifest}']
             }
         })

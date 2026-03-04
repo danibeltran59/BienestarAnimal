@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { registerSW } from 'virtual:pwa-register'
+
+registerSW({ immediate: true })
+
 // Global diagnostic catcher for unexpected mobile crashes
 window.onerror = function (message, source, lineno, colno, error) {
     alert("CRITICAL ERROR: " + message + "\nAt: " + source + ":" + lineno);

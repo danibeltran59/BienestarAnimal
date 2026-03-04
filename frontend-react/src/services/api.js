@@ -121,7 +121,7 @@ class MockStore {
 const mockStore = new MockStore();
 
 const api = axios.create({
-    baseURL: '/api',
+    baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true'
